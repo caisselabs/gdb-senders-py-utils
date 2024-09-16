@@ -122,11 +122,12 @@ def async_debug():
     handled_states = []
     
     for (debug_symbol, demangled_name) in debug_symbols:
-        print('prettify: {}'.format(stdx.prettify_ct_strings(demangled_name)))
-        print('  ======== {}'.format(debug_symbol.value(frame)))
         pretty_name = stdx.prettify_ct_strings(demangled_name)
+        #print('prettify: {}'.format(pretty_name))
+        # print('  ======== {}'.format(debug_symbol.value(frame)))
         add_symbol(debug_symbol)
         if start_detached_op_state_re.search(pretty_name):
+            #print(f'found a start_detached.')
             try:
                 h = Handled(pretty_name)
                 h.set_gdb_symbol(debug_symbol)

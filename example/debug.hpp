@@ -373,7 +373,7 @@ struct debug_handler {
       recursively_reset_handled<C, context_t, sndrs_t>();
     }
 
-    handled<C, L, S, Ctx> = true;
+    handled<C, L, S, context_t> = true;
   }
 };
 }
