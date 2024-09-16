@@ -1,0 +1,80 @@
+name: Publish GitHub Pages
+permissions: read-all
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+env:
+  DEBIAN_FRONTEND: noninteractive
+
+jobs:
+  configure:
+    name: Configure Github Pages Publishing
+    runs-on: ${{ github.repository_owner == 'intel' && 'intel-' || '' }}ubuntu-22.04
+    outputs:
+      enable_publish: ${{ steps.check.outputs.isfork == 'NO' }}
+    steps:
+      - id: check
+        name: Check if Fork
+        run: |
+          if [ "${{ github.repository_owner }}" = "intel" ]; then
+            echo "This is the main repository, **enabling publishing**" >> "$GITHUB_STEP_SUMMARY"
+            echo "isfork=NO" >> "$GITHUB_OUTPUT"
+          else
+            echo "This is a fork, **disabling publishing**" >> "$GITHUB_STEP_SUMMARY"
+            echo "isfork=YES" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    needs: configure
+    name: Build Documentation
+    runs-on: ${{ github.repository_owner == 'intel' && 'intel-' || '' }}ubuntu-22.04
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - name: Setup Node.js
+        uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
+        with:
+          node-version: 18
+      - name: Install Mermaid
+        run: |
+          sudo npm install -g @mermaid-js/mermaid-cli@10.6.1
+          node /usr/local/lib/node_modules/@mermaid-js/mermaid-cli/node_modules/puppeteer/install.js
+      - name: Install asciidoctor
+        run: |
+          sudo apt update
+          sudo apt install -y asciidoctor
+          sudo gem install asciidoctor asciidoctor-diagram rouge
+      - name: Build documentation
+        run: |
+          mkdir -p ./generated-html
+          asciidoctor -r asciidoctor-diagram docs/index.adoc -D ./generated-html
+          if [ -e docs/static ]; then cp -rf docs/static ./generated-html; fi
+          touch ./generated-html/.nojekyll
+          ls -la ./generated-html
+      - name: Setup github pages
+        if: needs.configure.outputs.enable_publish == 'true'
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0
+      - name: Upload artifacts
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
+        with:
+          path: ./generated-html
+
+  deploy:
+    needs: [configure, build]
+    if: needs.configure.outputs.enable_publish == 'true'
+    name: Deploy Documentation
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ${{ github.repository_owner == 'intel' && 'intel-' || '' }}ubuntu-22.04
+    steps:
+      - name: Deploy to github pages
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5

@@ -1,0 +1,48 @@
+
+// handled_type : "async_trace::handled" "<" string "," string "," string "," op_type ">"
+// op_type      : "async::_start_detached::op_state" "<" cts "," sender_type "," template_params ">"
+
+handled_type : "async_trace::handled" "<" string "," string "," string "," context ">"
+context      : "async_trace::context" "<" namespace_type "," string "," sender_type ">"
+cts          : "stdx::v1::cts_t<" string ">"
+
+?sender_type : then_sender_type
+             | seq_sender_type
+             | just_sender_type
+             | when_all_sender_type
+	     | repeat_sender_type
+             | namespace_type
+
+then_sender_type : "async::_then::sender" "<" string "," namespace_type "," sender_type "," namespace_type ">"
+seq_sender_type  : "async::_sequence::sender" "<" string "," sender_type "," "async::_sequence::detail::wrapper" "<" sender_type ">" ">"
+just_sender_type : "async::_just::sender" "<" string "," namespace_type "," namespace_type ">"
+
+repeat_sender_type : "async::_repeat::sender" "<" string "," sender_type "," namespace_type ">"
+
+when_all_sender_type      : "async::_when_all::sender" "<" string ("," _when_all_sub_sender_type)* ">"
+_when_all_sub_sender_type : "async::_when_all::sub_sender" "<" sender_type "," integral ">"
+
+namespace_type : ("::")? (identifier "::")* identifier template?
+
+template : "<" template_params? ">"
+template_param : string
+               | namespace_type
+               | integral
+
+template_params: template_param ( "," template_param )*
+
+
+string       : ESCAPED_STRING
+identifier   : CPP_IDENTIFIER
+                         
+CPP_IDENTIFIER: (("_"|"$"|ALPHA) ("_"|ALPHA|DIGIT)*)
+ALPHA         : "a".."z" | "A..Z"
+DIGIT         : "0".."9"
+
+integral      : NUMBER ("ul")?
+                    
+%import common.WS
+%import common.CNAME
+%import common.ESCAPED_STRING
+%import common.NUMBER
+%ignore WS
