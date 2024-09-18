@@ -71,54 +71,34 @@ template <typename T>
 struct lookup_tag;
 
 template <typename Tag, stdx::ct_string N, typename... Ts>
-struct lookup_tag<context<Tag, N, Ts...>> {
-  using type = Tag;
-};
+struct lookup_tag<context<Tag, N, Ts...>>                  {  using type = Tag; };
 
 template <stdx::ct_string N, typename... Ts>
-struct lookup_tag<async::_just::sender<N, Ts...>> {
-  using type = just_t;
-};
+struct lookup_tag<async::_just::sender<N, Ts...>>          { using type = just_t; };
 
 template <stdx::ct_string N, typename... Ts>
-struct lookup_tag<async::_let::sender<N, Ts...>> {
-  using type = let_t;
-};
+struct lookup_tag<async::_let::sender<N, Ts...>>           { using type = let_t; };
 
 template <stdx::ct_string N, typename... Ts>
-struct lookup_tag<async::_repeat::sender<N, Ts...>> {
-  using type = repeat_t;
-};
+struct lookup_tag<async::_repeat::sender<N, Ts...>>        { using type = repeat_t; };
 
 template <stdx::ct_string N, typename... Ts>
-struct lookup_tag<async::_retry::sender<N, Ts...>> {
-  using type = retry_t;
-};
+struct lookup_tag<async::_retry::sender<N, Ts...>>         { using type = retry_t; };
 
 template <stdx::ct_string N, typename... Ts>
-struct lookup_tag<async::_sequence::sender<N, Ts...>> {
-  using type = sequence_t;
-};
+struct lookup_tag<async::_sequence::sender<N, Ts...>>      { using type = sequence_t; };
 
 template <stdx::ct_string N, typename... Ts>
-struct lookup_tag<async::_when_all::sender<N, Ts...>> {
-  using type = when_all_t;
-};
+struct lookup_tag<async::_when_all::sender<N, Ts...>>      { using type = when_all_t; };
 
 template <stdx::ct_string N, typename... Ts>
-struct lookup_tag<async::_when_any::sender<N, Ts...>> {
-  using type = when_any_t;
-};
+struct lookup_tag<async::_when_any::sender<N, Ts...>>      { using type = when_any_t; };
 
 template <stdx::ct_string N, typename... Ts>
-struct lookup_tag<async::_then::sender<N, Ts...>> {
-  using type = then_t;
-};
+struct lookup_tag<async::_then::sender<N, Ts...>>          { using type = then_t; };
 
 template <typename... Ts>
-struct lookup_tag<async::_start_detached::op_state<Ts...>> {
-  using type = start_detached_t;
-};
+struct lookup_tag<async::_start_detached::op_state<Ts...>> { using type = start_detached_t; };
 
 
 template <typename T>
