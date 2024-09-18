@@ -2,7 +2,8 @@
 class OpType:
     sender_type = "op"
 
-    def __init__(self, label, sender, *args):
+    def __init__(self, chain_name, label, sender, *args):
+        self.chain_name = chain_name
         self.label = label
         self.sender = sender
 
@@ -12,7 +13,8 @@ class OpType:
 class Context:
     sender_type = "context"
 
-    def __init__(self, tag, label, sender, *args):
+    def __init__(self, chain_name, tag, label, sender, *args):
+        self.chain_name = chain_name
         self.tag = tag
         self.label = label
         self.sender = sender
@@ -23,7 +25,8 @@ class Context:
 class ThenSender:
     sender_type = "then"
 
-    def __init__(self, link, channel, sender, *args):
+    def __init__(self, chain_name, link, channel, sender, *args):
+        self.chain_name = chain_name
         self.link_name = link
         self.channel = channel
         self.sender = sender
@@ -34,7 +37,7 @@ class ThenSender:
 
     def graph(self, builder):
         (builder, prev_end_node) = self.sender.graph(builder)
-        node = f"then<{self.link_name}>"
+        node = f"{self.chain_name}-then<{self.link_name}>"
         builder.add_node(name=node, label=f"then<{self.link_name}>", node_identifier=self.node_identifier)
         builder.add_edge(prev_end_node, node)
         return (builder, node)
@@ -42,7 +45,8 @@ class ThenSender:
 class SeqSender:
     sender_type = "sequence"
 
-    def __init__(self, link, sender_a, sender_b):
+    def __init__(self, chain_name, link, sender_a, sender_b):
+        self.chain_name = chain_name
         self.link_name = link
         self.sender_a = sender_a
         self.sender_b = sender_b
@@ -52,11 +56,13 @@ class SeqSender:
         return f"{self.sender_a.chain()} -> {self.sender_b.chain()}"
 
     def graph(self, builder):
-        sender_a_name = f"seq<{self.link_name}, a>"
-        sender_b_name = f"seq<{self.link_name}, b>"
+        sender_a_label = f"seq<{self.link_name}, a>"
+        sender_b_label = f"seq<{self.link_name}, b>"
+        sender_a_name = f"{self.chain_name}-{sender_a_label}"
+        sender_b_name = f"{self.chain_name}-{sender_b_label}"
 
-        sub_a = builder.subgraph(sender_a_name)
-        sub_b = builder.subgraph(sender_b_name)
+        sub_a = builder.subgraph(sender_a_name, sender_a_label)
+        sub_b = builder.subgraph(sender_b_name, sender_b_label)
 
         self.sender_a.graph(sub_a)
         self.sender_b.graph(sub_b)
@@ -71,7 +77,8 @@ class SeqSender:
 class JustSender:
     sender_type = "just"
 
-    def __init__(self, link, channel, *args, **kwargs):
+    def __init__(self, chain_name, link, channel, *args, **kwargs):
+        self.chain_name = chain_name
         self.link_name = link
         self.channel = channel
         self.node_identifier = {"link_name": link, "sender_type": self.sender_type}
@@ -80,14 +87,15 @@ class JustSender:
         return f"just({self.link_name})"
 
     def graph(self, builder):
-        node_name = f"just<{self.link_name}>"
+        node_name = f"{self.chain_name}-just<{self.link_name}>"
         builder.add_node(name=node_name, label=f"just<{self.link_name}>", node_identifier=self.node_identifier)
         return (builder, node_name)
 
 class WhenAllSender:
     sender_type = "when_all"
 
-    def __init__(self, link, *senders):
+    def __init__(self, chain_name, link, *senders):
+        self.chain_name = chain_name
         self.link_name = link
         self.senders = senders[::2]
         self.node_identifier = {"link_name": link, "sender_type": "when_all"}
@@ -97,8 +105,9 @@ class WhenAllSender:
         return f"when_all[{ss}]"
 
     def graph(self, builder):
-        when_all_name = f"when_all<{self.link_name}>"
-        when_all_subgraph = builder.subgraph(when_all_name, node_identifier=self.node_identifier)
+        when_all_name = f"{self.chain_name}-when_all<{self.link_name}>"
+        when_all_label = f"when_all<{self.link_name}>"
+        when_all_subgraph = builder.subgraph(when_all_name, when_all_label, node_identifier=self.node_identifier)
 
         for s in self.senders:
             s.graph(when_all_subgraph)
@@ -109,19 +118,24 @@ class WhenAllSender:
 class RepeatSender:
     sender_type = "repeat"
 
-    def __init__(self, link, sender, *args):
+    def __init__(self, chain_name, link, sender, *args):
+        self.chain_name = chain_name
         self.link_name = link
         self.sender = sender
         self.node_identifier = {"link_name": link, "sender_type": "repeat"}
         
     def chain(self):
         ss = ", ".join([s.chain() for s in self.senders])
-        return f"when_all[{ss}]"
+        return f"repeat[{ss}]"
 
     def graph(self, builder):
-        (builder, prev_end_node) = self.sender.graph(builder)
-        node = f"repeat<{self.link_name}>"
-        builder.add_node(name=node, label=f"repeat<{self.link_name}>", node_identifier=self.node_identifier)
-        builder.add_edge(prev_end_node, node)
-        return (builder, node)
+        node_name = f"{self.chain_name}-repeat<{self.link_name}>"
+        node_label = f"repeat<{self.link_name}>"
+        repeat_subgraph = builder.subgraph(node_name, node_label, node_identifier=self.node_identifier, style='rounded')
 
+        self.sender.graph(repeat_subgraph)
+
+        builder.add_subgraph(repeat_subgraph, node_identifier=self.node_identifier)
+        return (builder, node_name)
+
+    

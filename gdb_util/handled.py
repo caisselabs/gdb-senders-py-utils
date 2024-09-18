@@ -8,8 +8,14 @@ _handled_lark_parser = None
 
 class HandledTransformer(Transformer):
     """A lark.Transformer for handled data types"""
+    def __init__(self, chain_name, *args, **kwargs):
+        super(HandledTransformer, self).__init__(*args, **kwargs)
+        self.chain_name = chain_name
+
     def handled_type(self, arg):
-        return Handled(*arg)
+        h = Handled(*arg)
+        self.chain_name = h.chain_name
+        return h
 
     def string(self, s):
         (s,) = s
@@ -19,25 +25,25 @@ class HandledTransformer(Transformer):
     #    return int(i)
 
     def op_type(self, arg):
-        return OpType(*arg)
+        return OpType(self.chain_name, *arg)
 
     def context(self, arg):
-        return Context(*arg)
+        return Context(self.chain_name, *arg)
 
     def then_sender_type(self, arg):
-        return ThenSender(*arg)
+        return ThenSender(self.chain_name, *arg)
 
     def seq_sender_type(self, arg):
-        return SeqSender(*arg)
+        return SeqSender(self.chain_name, *arg)
 
     def just_sender_type(self, arg):
-        return JustSender(*arg)
+        return JustSender(self.chain_name, *arg)
 
     def when_all_sender_type(self, arg):
-        return WhenAllSender(*arg)
+        return WhenAllSender(self.chain_name, *arg)
 
     def repeat_sender_type(self, arg):
-        return RepeatSender(*arg)
+        return RepeatSender(self.chain_name, *arg)
 
 
 class Handled:
@@ -61,5 +67,7 @@ def parse(type_string):
             _handled_lark_parser = Lark(f, start="handled_type")
 
     tree = _handled_lark_parser.parse(type_string)
-    return HandledTransformer().transform(tree)
+    xformer = HandledTransformer("barchain")
+    xformer.chain_name = "foochain"
+    return xformer.transform(tree)
 

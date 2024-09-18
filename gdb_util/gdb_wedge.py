@@ -103,8 +103,8 @@ def get_symbols(chain_name, **kwargs):
 # --------------------------------------------------
 def async_debug():
     async_debug_re = re.compile(r"async_trace::handled")
-    #start_detached_op_state_re = re.compile(r"async::_start_detached::op_state")
-    start_detached_op_state_re = re.compile(r"async_trace::context<async_trace::start_detached_t")
+    start_detached_op_state_re = re.compile(r"async::_start_detached::op_state")
+    start_detached_context_re = re.compile(r"async_trace::context<async_trace::start_detached_t")
     
     frame = gdb.selected_frame()
     block = frame.block()
@@ -114,7 +114,10 @@ def async_debug():
         for symbol in block:
             name = symbol.name
             demangled_name = cxxfilt.demangle(name)
-            if async_debug_re.match(demangled_name):
+            pretty_name = stdx.prettify_ct_strings(demangled_name)
+            #print('prettify: {}'.format(pretty_name))
+            #if async_debug_re.match(demangled_name):
+            if async_debug_re.search(demangled_name):
                 debug_symbols.add((symbol, demangled_name))
                     
         block = block.superblock
@@ -123,10 +126,10 @@ def async_debug():
     
     for (debug_symbol, demangled_name) in debug_symbols:
         pretty_name = stdx.prettify_ct_strings(demangled_name)
-        #print('prettify: {}'.format(pretty_name))
+        # print('prettify: {}'.format(pretty_name))
         # print('  ======== {}'.format(debug_symbol.value(frame)))
         add_symbol(debug_symbol)
-        if start_detached_op_state_re.search(pretty_name):
+        if start_detached_op_state_re.search(pretty_name) or start_detached_context_re.search(pretty_name):
             #print(f'found a start_detached.')
             try:
                 h = Handled(pretty_name)
