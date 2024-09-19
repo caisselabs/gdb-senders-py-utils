@@ -342,9 +342,8 @@ using reset_recursively_t = mp11::mp_list<repeat_t>;
 
 struct debug_handler {
 
-  template <stdx::ct_string C, stdx::ct_string L, stdx::ct_string S,
-	    typename Ctx, typename... Args>
-  constexpr auto signal(Args &&...) -> void {
+  template <stdx::ct_string C, stdx::ct_string L, stdx::ct_string S, typename Ctx>
+  constexpr auto signal(auto ...) -> void {
     using context_t = extract_context_t<Ctx>;
     using tag_t = typename context_t::tag_t;
     using sndrs_t = typename context_t::sndrs_t;
