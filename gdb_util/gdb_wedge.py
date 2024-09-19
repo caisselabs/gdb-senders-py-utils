@@ -6,8 +6,8 @@ from . import handled
 
 
 handled_chain_name_re = re.compile(r'^async_trace::handled<\"(.+?)\",')
-
-handled_identity_re = re.compile(r'^async_trace::handled<\"(.+?)\", \"(.+?)\", \"(.+?)\", async_trace::context<async_trace::(.+?)_t,')
+handled_identity_re = re.compile(r'^async_trace::handled<\"(.+?)\", \"(.+?)\", \"(.+?)\", async::_(.+?)::')
+handled_identity_ctx_re = re.compile(r'^async_trace::handled<\"(.+?)\", \"(.+?)\", \"(.+?)\", async_trace::context<async_trace::(.+?)_t,')
 
 
 class Handled:
@@ -60,12 +60,14 @@ class SymbolMapper:
         demangled_name = cxxfilt.demangle(symbol.name)
         pretty_name = stdx.prettify_ct_strings(demangled_name)
 
-        m = re.match(handled_identity_re, pretty_name)
-        if not m:
-            # TODO: throw here?
+        m0 = re.match(handled_identity_re, pretty_name)
+        m1 = re.match(handled_identity_ctx_re, pretty_name)
+        if not (m0 or m1):
+            print(f"failed to add symbol to SymbolMapper: {pretty_name}")
             return None
 
-        link_symbol = ChainDebugSymbol(symbol, pretty_name, *m.group(1, 2, 3, 4))
+        m = m0.group(1, 2, 3, 4) if m0 else m1.group(1, 2, 3, 4)
+        link_symbol = ChainDebugSymbol(symbol, pretty_name, *m)
 
         l = self.chain_dict.get(link_symbol.chain_name, [])
         l.append(link_symbol)
@@ -110,9 +112,8 @@ def get_symbols(chain_name, **kwargs):
 # --------------------------------------------------
 def async_debug(debug_flag=None):
     async_debug_re = re.compile(r"async_trace::handled")
-    start_detached_op_state_re = re.compile(r"async::_start_detached::op_state")
-    start_detached_context_re = re.compile(r"async_trace::context<async_trace::start_detached_t")
-    
+    start_detached_op_state_re = re.compile(r'^async_trace::handled<\"(.+?)\", \"(.+?)\", \"start\", async::_start_detached::op_state')
+    start_detached_context_re = re.compile(r'^async_trace::handled<\"(.+?)\", \"(.+?)\", \"start\", async_trace::context<async_trace::start_detached_t')
     frame = gdb.selected_frame()
     block = frame.block()
     debug_symbols = set()
@@ -122,11 +123,11 @@ def async_debug(debug_flag=None):
             name = symbol.name
             demangled_name = cxxfilt.demangle(name)
             pretty_name = stdx.prettify_ct_strings(demangled_name)
-            if debug_flag:
-                print(f"checking symbol {pretty_name[:50]}")
+            # if debug_flag:
+            #     print(f"checking symbol {pretty_name[:50]}")
             if async_debug_re.search(pretty_name):
-                # if debug_flag:
-                #    print(f"have debug symbol: {pretty_name[:50]}")
+                if debug_flag:
+                   print(f"have debug symbol: {pretty_name[:50]}")
                 debug_symbols.add((symbol, pretty_name))
                     
         block = block.superblock

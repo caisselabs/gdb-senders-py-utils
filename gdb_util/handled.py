@@ -1,6 +1,6 @@
 from pathlib import Path
 from lark import Lark, Transformer
-from gdb_util.sender import OpType, Context, ThenSender, SeqSender, JustSender, WhenAllSender, RepeatSender
+from gdb_util.sender import OpType, Context, ThenSender, SeqSender, JustSender, WhenAllSender, WhenAnySender, RepeatSender, ThreadScheduler, TimeScheduler, TriggerScheduler
 
 # cache the parser
 _handled_lark_parser = None
@@ -45,8 +45,20 @@ class HandledTransformer(Transformer):
     def when_all_sender_type(self, arg):
         return WhenAllSender(self.chain_name, *arg)
 
+    def when_any_sender_type(self, arg):
+        return WhenAnySender(self.chain_name, *arg)
+
     def repeat_sender_type(self, arg):
         return RepeatSender(self.chain_name, *arg)
+
+    def thread_scheduler_type(self, arg):
+        return ThreadScheduler(self.chain_name, *arg)
+
+    def time_scheduler_type(self, arg):
+        return TimeScheduler(self.chain_name, *arg)
+
+    def trigger_scheduler_type(self, arg):
+        return TriggerScheduler(self.chain_name, *arg)
 
 
 class Handled:

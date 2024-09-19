@@ -9,7 +9,11 @@ cts          : "stdx::v1::cts_t<" string ">"
              | seq_sender_type
              | just_sender_type
              | when_all_sender_type
+             | when_any_sender_type
 	     | repeat_sender_type
+	     | thread_scheduler_type
+	     | time_scheduler_type
+	     | trigger_scheduler_type
              | namespace_type
 
 then_sender_type : "async::_then::sender" "<" string "," namespace_type "," sender_type "," namespace_type ">"
@@ -21,7 +25,16 @@ repeat_sender_type : "async::_repeat::sender" "<" string "," sender_type "," nam
 when_all_sender_type      : "async::_when_all::sender" "<" string ("," _when_all_sub_sender_type)* ">"
 _when_all_sub_sender_type : "async::_when_all::sub_sender" "<" sender_type "," integral ">"
 
-namespace_type : ("::")? (identifier "::")* identifier template?
+when_any_sender_type      : "async::_when_any::sender" "<" string "," namespace_type ("," _when_any_sub_sender_type)* ">"
+_when_any_sub_sender_type : "async::_when_any::sub_sender" "<" sender_type "," integral ">"
+
+thread_scheduler_type : "async::thread_scheduler" "<" string ">::sender"
+
+trigger_scheduler_type : "async::trigger_scheduler" "<" string ("," namespace_type)? ">::sender"
+
+time_scheduler_type : "async::time_scheduler" "<" namespace_type "," string "," namespace_type "," namespace_type ">::sender"
+
+namespace_type : ("::")? (identifier "::")* identifier (identifier)? template?
 
 template : "<" template_params? ">"
 template_param : string
@@ -38,7 +51,7 @@ CPP_IDENTIFIER: (("_"|"$"|ALPHA) ("_"|ALPHA|DIGIT)*)
 ALPHA         : "a".."z" | "A..Z"
 DIGIT         : "0".."9"
 
-integral      : NUMBER ("ul")?
+integral      : NUMBER ("ul"|"l")?
                     
 %import common.WS
 %import common.CNAME
