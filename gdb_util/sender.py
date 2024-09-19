@@ -30,17 +30,20 @@ class ThenSender:
         self.link_name = link
         self.channel = channel
         self.sender = sender
-        self.node_identifier = {"link_name": link, "sender_type": self.sender_type}
+        self.node_identifier = {"chain_name": chain_name,
+                                "link_name": link,
+                                "sender_type": self.sender_type}
 
     def chain(self):
         return f"{self.sender.chain()} -> then({self.link_name})"
 
     def graph(self, builder):
         (builder, prev_end_node) = self.sender.graph(builder)
-        node = f"{self.chain_name}-then<{self.link_name}>"
-        builder.add_node(name=node, label=f"then<{self.link_name}>", node_identifier=self.node_identifier)
-        builder.add_edge(prev_end_node, node)
-        return (builder, node)
+        label_name = f"then<{self.link_name}>"
+        node_name = f"{self.chain_name}-{label_name}"
+        builder.add_node(name=node_name, label=label_name, node_identifier=self.node_identifier)
+        builder.add_edge(prev_end_node, node_name)
+        return (builder, node_name)
 
 class SeqSender:
     sender_type = "sequence"
@@ -50,7 +53,7 @@ class SeqSender:
         self.link_name = link
         self.sender_a = sender_a
         self.sender_b = sender_b
-        self.node_identifier = {"link_name": link, "sender_type": self.sender_type}
+        self.node_identifier = {"chain_name": chain_name, "link_name": link, "sender_type": self.sender_type}
 
     def chain(self):
         return f"{self.sender_a.chain()} -> {self.sender_b.chain()}"
@@ -81,14 +84,15 @@ class JustSender:
         self.chain_name = chain_name
         self.link_name = link
         self.channel = channel
-        self.node_identifier = {"link_name": link, "sender_type": self.sender_type}
+        self.node_identifier = {"chain_name": chain_name, "link_name": link, "sender_type": self.sender_type}
 
     def chain(self):
         return f"just({self.link_name})"
 
     def graph(self, builder):
-        node_name = f"{self.chain_name}-just<{self.link_name}>"
-        builder.add_node(name=node_name, label=f"just<{self.link_name}>", node_identifier=self.node_identifier)
+        label = f"just<{self.link_name}>"
+        node_name = f"{self.chain_name}-{label}"
+        builder.add_node(name=node_name, label=label, node_identifier=self.node_identifier)
         return (builder, node_name)
 
 class WhenAllSender:
@@ -98,22 +102,22 @@ class WhenAllSender:
         self.chain_name = chain_name
         self.link_name = link
         self.senders = senders[::2]
-        self.node_identifier = {"link_name": link, "sender_type": "when_all"}
+        self.node_identifier = {"chain_name": chain_name, "link_name": link, "sender_type": "when_all"}
         
     def chain(self):
         ss = ", ".join([s.chain() for s in self.senders])
         return f"when_all[{ss}]"
 
     def graph(self, builder):
-        when_all_name = f"{self.chain_name}-when_all<{self.link_name}>"
-        when_all_label = f"when_all<{self.link_name}>"
-        when_all_subgraph = builder.subgraph(when_all_name, when_all_label, node_identifier=self.node_identifier)
+        node_label = f"when_all<{self.link_name}>"
+        node_name = f"{self.chain_name}-{node_label}"
+        when_all_subgraph = builder.subgraph(node_name, node_label, node_identifier=self.node_identifier)
 
         for s in self.senders:
             s.graph(when_all_subgraph)
 
         builder.add_subgraph(when_all_subgraph, node_identifier=self.node_identifier)
-        return (builder, when_all_name)
+        return (builder, node_name)
 
 class RepeatSender:
     sender_type = "repeat"
@@ -122,15 +126,15 @@ class RepeatSender:
         self.chain_name = chain_name
         self.link_name = link
         self.sender = sender
-        self.node_identifier = {"link_name": link, "sender_type": "repeat"}
+        self.node_identifier = {"chain_name": chain_name, "link_name": link, "sender_type": "repeat"}
         
     def chain(self):
         ss = ", ".join([s.chain() for s in self.senders])
         return f"repeat[{ss}]"
 
     def graph(self, builder):
-        node_name = f"{self.chain_name}-repeat<{self.link_name}>"
         node_label = f"repeat<{self.link_name}>"
+        node_name = f"{self.chain_name}-{node_label}"
         repeat_subgraph = builder.subgraph(node_name, node_label, node_identifier=self.node_identifier, style='rounded')
 
         self.sender.graph(repeat_subgraph)

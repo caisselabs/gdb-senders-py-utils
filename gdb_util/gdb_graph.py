@@ -23,7 +23,7 @@ class DotColorMapper:
         if not node_identifier or not self.frame:
             return {}
 
-        syms = get_symbols(self.chain_name, **node_identifier)
+        syms = get_symbols(**node_identifier)
 
         mapped_color = 'ghostwhite'
         for (sig, color) in self.signal_priority_map:
@@ -56,7 +56,7 @@ class DotColorMapperInt:
         if not node_identifier or not self.frame:
             return {}
 
-        syms = get_symbols(self.chain_name, **node_identifier)
+        syms = get_symbols(**node_identifier)
 
         mapped_color = 'ghostwhite'
         for (sig, color) in self.signal_priority_map:

@@ -4,13 +4,22 @@ import cxxfilt
 from . import stdx
 from . import handled
 
+
+handled_chain_name_re = re.compile(r'^async_trace::handled<\"(.+?)\",')
+
+handled_identity_re = re.compile(r'^async_trace::handled<\"(.+?)\", \"(.+?)\", \"(.+?)\", async_trace::context<async_trace::(.+?)_t,')
+
+
 class Handled:
     # symbol_name is demangled
     def __init__(self, symbol_name):
         self.sym = stdx.prettify_ct_strings(symbol_name) #, pre="ct_string<", post=">")
-        self.handled = handled.parse(self.sym)
+        # need to extract the chain name early for the parser transformer
+        m = re.match(handled_chain_name_re, self.sym)
+        self.chain_name = m.group(1) if m else None
+        self.handled = handled.parse(chain_name=self.chain_name, type_string=self.sym)
         self.gdb_symbol = None
-        self.chain_name = self.handled.chain_name
+        #self.chain_name = self.handled.chain_name
 
     def set_gdb_symbol(self, s):
         self.gdb_symbol = s
@@ -24,8 +33,6 @@ class Handled:
     def signal_name(self):
         return self.handled.chain_name
 
-
-handled_identity_re = re.compile(r'^async_trace::handled<\"(.+?)\", \"(.+?)\", \"(.+?)\", async_trace::context<async_trace::(.+?)_t,')
 
 
 class ChainDebugSymbol:
@@ -101,7 +108,7 @@ def get_symbols(chain_name, **kwargs):
 
 
 # --------------------------------------------------
-def async_debug():
+def async_debug(debug_flag=None):
     async_debug_re = re.compile(r"async_trace::handled")
     start_detached_op_state_re = re.compile(r"async::_start_detached::op_state")
     start_detached_context_re = re.compile(r"async_trace::context<async_trace::start_detached_t")
@@ -115,28 +122,34 @@ def async_debug():
             name = symbol.name
             demangled_name = cxxfilt.demangle(name)
             pretty_name = stdx.prettify_ct_strings(demangled_name)
-            #print('prettify: {}'.format(pretty_name))
-            #if async_debug_re.match(demangled_name):
-            if async_debug_re.search(demangled_name):
-                debug_symbols.add((symbol, demangled_name))
+            if debug_flag:
+                print(f"checking symbol {pretty_name[:50]}")
+            if async_debug_re.search(pretty_name):
+                # if debug_flag:
+                #    print(f"have debug symbol: {pretty_name[:50]}")
+                debug_symbols.add((symbol, pretty_name))
                     
         block = block.superblock
 
     handled_states = []
+
     
     for (debug_symbol, demangled_name) in debug_symbols:
-        pretty_name = stdx.prettify_ct_strings(demangled_name)
-        # print('prettify: {}'.format(pretty_name))
-        # print('  ======== {}'.format(debug_symbol.value(frame)))
         add_symbol(debug_symbol)
-        if start_detached_op_state_re.search(pretty_name) or start_detached_context_re.search(pretty_name):
-            #print(f'found a start_detached.')
+        if start_detached_op_state_re.search(demangled_name) or \
+           start_detached_context_re.search(demangled_name):
+            
+            if debug_flag:
+                print(f'found a start_detached: {demangled_name[:50]}')
             try:
-                h = Handled(pretty_name)
+                h = Handled(demangled_name)
                 h.set_gdb_symbol(debug_symbol)
                 handled_states.append(h)
             except:
-                pass
+                print("  --- error creating handled object for start_detached")
+                print(f"      symbol: {demangled_name}")
+
+    print(f"Found {len(debug_symbols)} debug symbols and {len(handled_states)} chains.")
     return handled_states
         
 

@@ -9,11 +9,12 @@ _handled_lark_parser = None
 class HandledTransformer(Transformer):
     """A lark.Transformer for handled data types"""
     def __init__(self, chain_name, *args, **kwargs):
-        super(HandledTransformer, self).__init__(*args, **kwargs)
         self.chain_name = chain_name
+        super(HandledTransformer, self).__init__(*args, **kwargs)
 
     def handled_type(self, arg):
         h = Handled(*arg)
+        print(f"==== got handled_type({h.chain_name}) ====")
         self.chain_name = h.chain_name
         return h
 
@@ -25,12 +26,14 @@ class HandledTransformer(Transformer):
     #    return int(i)
 
     def op_type(self, arg):
+        print(f"==== got op_type ====")
         return OpType(self.chain_name, *arg)
 
     def context(self, arg):
         return Context(self.chain_name, *arg)
 
     def then_sender_type(self, arg):
+        print(f"==== got then_sender_type({self.chain_name}) =====")
         return ThenSender(self.chain_name, *arg)
 
     def seq_sender_type(self, arg):
@@ -60,14 +63,13 @@ class Handled:
         return (self.op.graph(builder)[0], None)
 
     
-def parse(type_string):
+def parse(chain_name, type_string):
     global _handled_lark_parser
     if not _handled_lark_parser:
         with open(Path(__file__).parent.absolute() / "handled.lark") as f:
             _handled_lark_parser = Lark(f, start="handled_type")
 
     tree = _handled_lark_parser.parse(type_string)
-    xformer = HandledTransformer("barchain")
-    xformer.chain_name = "foochain"
+    xformer = HandledTransformer(chain_name)
     return xformer.transform(tree)
 
