@@ -66,7 +66,7 @@ class SymbolMapper:
             print(f"failed to add symbol to SymbolMapper: {pretty_name}")
             return None
 
-        m = m0.group(1, 2, 3, 4) if m0 else m1.group(1, 2, 3, 4)
+        m = m1.group(1, 2, 3, 4) if m1 else m0.group(1, 2, 3, 4)
         link_symbol = ChainDebugSymbol(symbol, pretty_name, *m)
 
         l = self.chain_dict.get(link_symbol.chain_name, [])
@@ -127,7 +127,7 @@ def async_debug(debug_flag=None):
             #     print(f"checking symbol {pretty_name[:50]}")
             if async_debug_re.search(pretty_name):
                 if debug_flag:
-                   print(f"have debug symbol: {pretty_name[:50]}")
+                   print(f"have debug symbol: {pretty_name[:100]}")
                 debug_symbols.add((symbol, pretty_name))
                     
         block = block.superblock
@@ -141,7 +141,7 @@ def async_debug(debug_flag=None):
            start_detached_context_re.search(demangled_name):
             
             if debug_flag:
-                print(f'found a start_detached: {demangled_name[:50]}')
+                print(f'found a start_detached: {demangled_name[:100]}')
             try:
                 h = Handled(demangled_name)
                 h.set_gdb_symbol(debug_symbol)

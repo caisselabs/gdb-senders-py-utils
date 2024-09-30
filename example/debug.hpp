@@ -337,10 +337,16 @@ template <typename C, typename T>
 constexpr bool contains_v = detail::contains<C, T>::value;
 
 // list of tags to recursively reset when a start signal is received  
-using reset_recursively_t = mp11::mp_list<repeat_t>;
+using reset_list_t = mp11::mp_list<repeat_t>;
   
 
 struct debug_handler {
+
+  template <stdx::ct_string C, stdx::ct_string L, stdx::ct_string S, typename Ctx>
+  void set_handled() {
+    handled<C, L, S, Ctx> = true;
+  }
+  
 
   template <stdx::ct_string C, stdx::ct_string L, stdx::ct_string S, typename Ctx>
   constexpr auto signal(auto ...) -> void {
@@ -348,11 +354,13 @@ struct debug_handler {
     using tag_t = typename context_t::tag_t;
     using sndrs_t = typename context_t::sndrs_t;
 
-    if constexpr (S == stdx::ct_string("start") && contains_v<reset_recursively_t, tag_t>) {
+    if constexpr (S == stdx::ct_string("start") && contains_v<reset_list_t, tag_t>) {
       recursively_reset_handled<C, context_t, sndrs_t>();
+
     }
 
-    handled<C, L, S, context_t> = true;
+    //handled<C, L, S, context_t> = true;
+    set_handled<C, L, S, context_t>();
   }
 };
 }

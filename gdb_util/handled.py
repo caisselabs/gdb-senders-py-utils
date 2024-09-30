@@ -14,7 +14,6 @@ class HandledTransformer(Transformer):
 
     def handled_type(self, arg):
         h = Handled(*arg)
-        print(f"==== got handled_type({h.chain_name}) ====")
         self.chain_name = h.chain_name
         return h
 
@@ -26,14 +25,12 @@ class HandledTransformer(Transformer):
     #    return int(i)
 
     def op_type(self, arg):
-        print(f"==== got op_type ====")
         return OpType(self.chain_name, *arg)
 
     def context(self, arg):
         return Context(self.chain_name, *arg)
 
     def then_sender_type(self, arg):
-        print(f"==== got then_sender_type({self.chain_name}) =====")
         return ThenSender(self.chain_name, *arg)
 
     def seq_sender_type(self, arg):

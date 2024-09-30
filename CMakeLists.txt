@@ -11,7 +11,14 @@ project(
 include(cmake/get_cpm.cmake)
 cpmaddpackage("gh:intel/cicd-repo-infrastructure#dev")
 
-add_versioned_package("gh:intel/cpp-baremetal-senders-and-receivers#4f98dcc")
+#add_versioned_package("gh:intel/cpp-baremetal-senders-and-receivers#4f98dcc")
+add_versioned_package(NAME cpp-std-extensions
+			   SOURCE_DIR /Users/mjcaisse/sandbox/cpp-std-extensions
+			   GIT_TAG HEAD)
+
+add_versioned_package(NAME cpp-baremetal-senders-and-receivers
+			   SOURCE_DIR /Users/mjcaisse/sandbox/cpp-baremetal-senders-and-receivers
+			   GIT_TAG HEAD)
 
 add_subdirectory(example)
 

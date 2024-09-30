@@ -38,7 +38,7 @@ namespace things {
 
   auto get_trigger =
       trigger_happy{}.schedule()
-    | async::timeout_after(5s, error{66})
+    | async::timeout_after(3s, error{66})
     ;
   
   auto s =
@@ -47,7 +47,8 @@ namespace things {
     | async::seq<"trigger-seq">(get_trigger)
     | async::then<"last-then">([](int v, auto ...){ std::cout << "got: " << v << "\n"; })
     | async::upon_error([](error v){ std::cout << "error{" << v.value << "}\n"; })
-    | async::repeat();
+    | async::repeat()
+    ;
 }
 
 
